@@ -66,12 +66,12 @@ def topological_sort(variable: Variable) -> Iterable[Variable]:
     def dfs(v: Variable, visited: List[Variable]) -> None:
         if v.is_constant() or v.unique_id in marked:
             return
-        visited.append(v)
-        marked[v.unique_id] = True
         if v.is_leaf():
             return
         for parent in v.parents:
             dfs(parent, visited)
+        visited.append(v)
+        marked[v.unique_id] = True
 
     dfs(variable, visited)
     return visited[::-1]
@@ -94,17 +94,15 @@ def backpropagate(variable: Variable, deriv: Any) -> None:
     for node in result:
         if node.is_leaf():
             continue
-        if node.unique_id in deriv_map:
-            deriv = deriv_map[node.unique_id]
-        deriv_list = node.chain_rule(deriv)
-        for key, item in deriv_list:
-            if key.is_leaf():
-                key.accumulate_derivative(item)
+        deriv_list = node.chain_rule(deriv_map[node.unique_id])
+        for ancestor, item in deriv_list:
+            if ancestor.is_leaf():
+                ancestor.accumulate_derivative(item)
                 continue
-            if key.unique_id in deriv_map:
-                deriv_map[key.unique_id] += item
+            if ancestor.unique_id in deriv_map:
+                deriv_map[ancestor.unique_id] += item
             else:
-                deriv_map[key.unique_id] = item
+                deriv_map[ancestor.unique_id] = item
 
 
 @dataclass
