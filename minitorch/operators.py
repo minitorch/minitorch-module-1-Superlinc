@@ -41,10 +41,7 @@ def is_close(x: float, y: float) -> bool:
 
 
 def sigmoid(x: float) -> float:
-    if x >= 0:
-        return 1.0 / (1.0 + math.exp(-x))
-    else:
-        return math.exp(x) / (1.0 + math.exp(x))
+    return 1.0 / (1.0 + math.exp(-x))
 
 
 def relu(x: float) -> float:
