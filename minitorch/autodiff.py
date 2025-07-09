@@ -22,8 +22,7 @@ def central_difference(f: Any, *vals: Any, arg: int = 0, epsilon: float = 1e-6) 
     Returns:
         An approximation of $f'_i(x_0, \ldots, x_{n-1})$
     """
-    # TODO: Implement for Task 1.1.
-    raise NotImplementedError("Need to implement for Task 1.1")
+    return (f(*vals[:arg], vals[arg] + epsilon, *vals[arg + 1 :]) - f(*vals)) / epsilon
 
 
 variable_count = 1
@@ -61,8 +60,21 @@ def topological_sort(variable: Variable) -> Iterable[Variable]:
     Returns:
         Non-constant Variables in topological order starting from the right.
     """
-    # TODO: Implement for Task 1.4.
-    raise NotImplementedError("Need to implement for Task 1.4")
+    marked = {}
+    visited = []
+
+    def dfs(v: Variable, visited: List[Variable]) -> None:
+        if v.is_constant() or v.unique_id in marked:
+            return
+        if v.is_leaf():
+            return
+        for parent in v.parents:
+            dfs(parent, visited)
+        visited.append(v)
+        marked[v.unique_id] = True
+
+    dfs(variable, visited)
+    return visited[::-1]
 
 
 def backpropagate(variable: Variable, deriv: Any) -> None:
@@ -76,8 +88,21 @@ def backpropagate(variable: Variable, deriv: Any) -> None:
 
     No return. Should write to its results to the derivative values of each leaf through `accumulate_derivative`.
     """
-    # TODO: Implement for Task 1.4.
-    raise NotImplementedError("Need to implement for Task 1.4")
+
+    result = topological_sort(variable)
+    deriv_map = {variable.unique_id: deriv}
+    for node in result:
+        if node.is_leaf():
+            continue
+        deriv_list = node.chain_rule(deriv_map[node.unique_id])
+        for ancestor, item in deriv_list:
+            if ancestor.is_leaf():
+                ancestor.accumulate_derivative(item)
+                continue
+            if ancestor.unique_id in deriv_map:
+                deriv_map[ancestor.unique_id] += item
+            else:
+                deriv_map[ancestor.unique_id] = item
 
 
 @dataclass
@@ -90,7 +115,7 @@ class Context:
     saved_values: Tuple[Any, ...] = ()
 
     def save_for_backward(self, *values: Any) -> None:
-        "Store the given `values` if they need to be used during backpropagation."
+        """Store the given `values` if they need to be used during backpropagation."""
         if self.no_grad:
             return
         self.saved_values = values
